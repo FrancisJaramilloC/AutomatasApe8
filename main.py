@@ -1,6 +1,6 @@
 import re
 from parser_or import parse_exp              # Francisco (feature/or)
-# from parser_and import parse_term          # Joel (feature/and) — descomentar al integrar
+from parser_and import parse_term            # Joel (feature/and)
 # from parser_not import parse_factor        # Alexander (feature/not) — descomentar al integrar
 
 # Tokens
@@ -68,10 +68,11 @@ def parsear(expresion):
     global tokens, posicion
     tokens = lexer(expresion)
     posicion = 0
-    # Al integrar: parse_exp llama a parse_term, que llama a parse_factor
-# Conectar los 3 niveles: OR -> AND -> NOT -> (OR)
-#   _factor = lambda: parse_factor(token_actual, avanzar, _exp)
-#    _term = lambda: parse_term(token_actual, avanzar, _factor)
+    
+    # Conectar los 3 niveles: OR -> AND -> NOT -> (OR)
+    # NOTA: Cambiar parse_factor_mock por parse_factor cuando se integre la rama feature/not
+    _factor = lambda: parse_factor_mock(token_actual, avanzar, _exp)
+    _term = lambda: parse_term(token_actual, avanzar, _factor)
     _exp = lambda: parse_exp(token_actual, avanzar, _term)
 
     resultado = _exp()
@@ -80,14 +81,41 @@ def parsear(expresion):
     return resultado
 
 if __name__ == "__main__":
-    print("Parser de Expresiones Booleanas\n")
     while True:
-        entrada = input(">> ")
-        if entrada.strip().lower() == "salir":
+        print("\n" + "="*40)
+        print("   Parser de Expresiones Booleanas")
+        print("="*40)
+        print("1. Analizar expresión sintácticamente (AST)")
+        print("2. Ver tokens (Analizador Léxico)")
+        print("3. Salir")
+        
+        opcion = input("\nSeleccione una opción >> ").strip()
+        
+        if opcion == "1":
+            entrada = input("Ingrese expresión lógica: ")
+            if not entrada.strip(): continue
+            try:
+                arbol = parsear(entrada)
+                import pprint
+                print("\nAST Generado:")
+                pprint.pprint(arbol)
+            except ValueError as e:
+                print(f"\n[!] {e}")
+                
+        elif opcion == "2":
+            entrada = input("Ingrese expresión lógica: ")
+            if not entrada.strip(): continue
+            try:
+                tks = lexer(entrada)
+                print("\nTokens detectados:")
+                for t in tks:
+                    if t[0] != TOKEN_EOF:
+                        print(f" -> Token: {t[0]:<12} | Lexema: '{t[1]}'")
+            except ValueError as e:
+                print(f"\n[!] {e}")
+                
+        elif opcion == "3":
+            print("Cerrando el parser...")
             break
-        if not entrada.strip():
-            continue
-        try:
-            print(f"AST: {parsear(entrada)}\n")
-        except ValueError as e:
-            print(f"{e}\n")
+        else:
+            print("[!] Opción no válida. Intente de nuevo.")
