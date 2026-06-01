@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutomatasAPE8</title>
+    
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text: #1F2937;
+            --border: #E5E7EB;
+        }
+        * { box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .header { text-align: center; flex-shrink: 0; }
+        .header h1 { margin: 0; font-size: 1.3rem; }
+        .header p { margin: 2px 0 0 0; font-size: 0.85rem; color: #6B7280; }
+
+        .top-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        h2 {
+            margin: 0 0 8px 0;
+            font-size: 0.95rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 6px;
+        }
+
+        .input-group { display: flex; gap: 8px; margin-bottom: 8px; }
+        input[type="text"] {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: background 0.3s;
+        }
+        button:hover { background-color: #4338CA; }
+
+        /* Estilos para los botones de ejemplos rápidos */
+        .examples-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .examples-label { font-size: 0.8rem; color: #6B7280; font-weight: 600; }
+        .examples-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .btn-example {
+            background-color: #EEF2FF;
+            color: #4F46E5;
+            border: 1px solid #C7D2FE;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-example:hover {
+            background-color: #C7D2FE;
+            color: #312E81;
+        }
+
+        .grammar-box {
+            background-color: #F8FAFC;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+
+        .tokens-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background-color: #F9FAFB; position: sticky; top: 0; }
+        .leaf { color: #10B981; font-weight: bold; font-family: monospace; }
+        .error {
+            color: #DC2626;
+            font-weight: bold;
+            padding: 6px 10px;
+            background: #FEF2F2;
+            border-radius: 6px;
+            display: none;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        /* Tarjeta del árbol */
+        .tree-card {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tree-wrapper {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            background-color: #FAFAFA;
+            overflow: auto;
+        }
+        .tree-container {
+            width: 100%;
+            height: 100%;
+            min-width: 600px;
+            min-height: 400px;
+        }
+
+        /* Botones de zoom flotantes */
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 10;
+        }
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            font-size: 1.1rem;
+            background: white;
+            color: var(--text);
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .zoom-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Análisis de Gramáticas Libres de Contexto</h1>
+        <p>Práctica APE8 - Teoría de Autómatas</p>
+    </div>
+
+    <div class="top-row">
+        <div class="card">
+            <h2>1. Ingreso de Expresión</h2>
+            <div class="input-group">
+                <input type="text" id="expresion" placeholder="Ej: A | B & C">
+                <button onclick="analizar()">Analizar</button>
+            </div>
+            
+            <div class="examples-group">
+                <span class="examples-label">Ejemplos de prueba rápida:</span>
+                <div class="examples-buttons">
+                    <button class="btn-example" onclick="cargarEjemplo('id | ~ ( id & id )')">Original</button>
+                    <button class="btn-example" onclick="cargarEjemplo('A | B & ~C')">Precedencia</button>
+                    <button class="btn-example" onclick="cargarEjemplo('~( id1 | id2 ) & ( id3 | id4 )')">Paréntesis múltiples</button>
+                    <button class="btn-example" onclick="cargarEjemplo('A & ( B | ( C & ~D ) )')">Anidamiento profundo</button>
+                </div>
+            </div>
+
+            <div class="grammar-box">
+                <strong>Gramática:</strong><br>
+                Nivel 1: Exp -> Exp | Term | Term<br>
+                Nivel 2: Term -> Term &amp; Factor | Factor<br>
+                Nivel 3: Factor -> ~ Factor | ( Exp ) | id
+            </div>
+            
+            <div id="mensaje-error" class="error"></div>
+        </div>
+
+        <div class="card">
+            <h2>2. Análisis Léxico (Tokens y Lexemas)</h2>
+            <div class="tokens-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Token (Tipo)</th>
+                            <th>Lexema (Valor)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-tokens">
+                        <tr><td colspan="3" style="text-align: center; color: #6B7280;">Sin datos</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card tree-card">
+        <h2>3. Árbol de Derivación (AST) Gráfico</h2>
+        <div class="tree-wrapper">
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="zoomIn()" title="Acercar">+</button>
+                <button class="zoom-btn" onclick="zoomOut()" title="Alejar">−</button>
+                <button class="zoom-btn" onclick="zoomFit()" title="Centrar / Ajustar" style="font-size:0.9rem;">⤢</button>
+            </div>
+            <div id="mi-arbol" class="tree-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let network = null;
+
+        // Función modificada para cargar el texto y analizar automáticamente
+        function cargarEjemplo(texto) {
+            document.getElementById('expresion').value = texto;
+            analizar(); 
+        }
+
+        async function analizar() {
+            const expresion = document.getElementById('expresion').value;
+            const errorDiv = document.getElementById('mensaje-error');
+            errorDiv.style.display = 'none';
+
+            if (!expresion.trim()) return;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/parse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expresion: expresion })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    renderizarTokens(data.tokens);
+                    dibujarArbol(data.ast);
+                } else {
+                    mostrarError(data.error);
+                }
+            } catch (err) {
+                mostrarError("Error de conexión. Asegúrate de que el backend en Python esté ejecutándose.");
+            }
+        }
+
+        function renderizarTokens(tokens) {
+            const tbody = document.getElementById('tabla-tokens');
+            tbody.innerHTML = '';
+            tokens.forEach((t, index) => {
+                if (t[0] === 'TOKEN_EOF') return; 
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${t[0]}</strong></td>
+                        <td><span class="leaf">${t[1]}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function mostrarError(mensaje) {
+            const errorDiv = document.getElementById('mensaje-error');
+            errorDiv.textContent = mensaje;
+            errorDiv.style.display = 'block';
+            document.getElementById('tabla-tokens').innerHTML = '<tr><td colspan="3" style="text-align: center; color: #DC2626;">Error en el análisis</td></tr>';
+            if (network) { network.destroy(); network = null; }
+        }
+
+        // --- Funciones de Zoom ---
+        function zoomIn() {
+            if (!network) return;
+            const escalaActual = network.getScale();
+            network.moveTo({ scale: escalaActual * 1.25 });
+        }
+        function zoomOut() {
+            if (!network) return;
+            const escalaActual = network.getScale();
+            network.moveTo({ scale: escalaActual * 0.8 });
+        }
+        function zoomFit() {
+            if (!network) return;
+            network.fit({ animation: { duration: 400, easingFunction: 'easeInOutQuad' } });
+        }
+
+        function dibujarArbol(astData) {
+            let nodosArreglo = [];
+            let aristasArreglo = [];
+            let contadorIds = 1;
+
+            function procesarNodo(nodoAst, idPadre = null) {
+                let idActual = contadorIds++;
+                let etiqueta = "";
+
+                if (typeof nodoAst === 'string') {
+                    etiqueta = nodoAst;
+                } else if (Array.isArray(nodoAst)) {
+                    etiqueta = nodoAst[0];
+                }
+
+                nodosArreglo.push({
+                    id: idActual,
+                    label: etiqueta,
+                    shape: 'circle',
+                    color: { background: 'white', border: '#10B981' },
+                    font: { size: 18, color: 'black' },
+                    borderWidth: 2
+                });
+
+                if (idPadre !== null) {
+                    aristasArreglo.push({
+                        from: idPadre,
+                        to: idActual,
+                        arrows: 'to',
+                        color: { color: '#6B7280' }
+                    });
+                }
+
+                if (Array.isArray(nodoAst)) {
+                    for (let i = 1; i < nodoAst.length; i++) {
+                        procesarNodo(nodoAst[i], idActual);
+                    }
+                }
+            }
+
+            procesarNodo(astData);
+
+            const contenedor = document.getElementById('mi-arbol');
+            const datosGrafo = {
+                nodes: new vis.DataSet(nodosArreglo),
+                edges: new vis.DataSet(aristasArreglo)
+            };
+            
+            const opciones = {
+                layout: {
+                    hierarchical: {
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        levelSeparation: 80,
+                        nodeSpacing: 100
+                    }
+                },
+                physics: false,
+                interaction: { dragNodes: true, zoomView: true, dragView: true }
+            };
+
+            if (network) { network.destroy(); }
+            network = new vis.Network(contenedor, datosGrafo, opciones);
+            network.fit();
+        }
+    </script>
+</body>
+</html>

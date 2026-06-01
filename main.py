@@ -1,7 +1,7 @@
 import re
 from parser_or import parse_exp              # Francisco (feature/or)
 from parser_and import parse_term            # Joel (feature/and)
-# from parser_not import parse_factor        # Alexander (feature/not) — descomentar al integrar
+from parser_not import parse_factor          # Alexander 
 
 # Tokens
 TOKEN_NOT    = "TOKEN_NOT"
@@ -22,25 +22,25 @@ SIMBOLOS_FIJOS = {
 }
 
 # Lexer
-REGEX_ID = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*") #Todos los datos que soporta el analizador
-REGEX_ESPACIOS = re.compile(r"[ \t\n\r]+") #Espacios en blanco que no se soportan
+REGEX_ID = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*") # Todos los datos que soporta el analizador
+REGEX_ESPACIOS = re.compile(r"[ \t\n\r]+") # Espacios en blanco que no se soportan
 
-#Identificar los tokens y analizador lexico
+# Identificar los tokens y analizador lexico
 def lexer(expresion):
     resultado = []
     i = 0
     while i < len(expresion):
         match = REGEX_ESPACIOS.match(expresion, i)
-        if match:  #Elimina los espacios en blanco
+        if match:  # Elimina los espacios en blanco
             i = match.end()
             continue
         c = expresion[i] 
-        if c in SIMBOLOS_FIJOS:  #Identifica los simbolos fijos
+        if c in SIMBOLOS_FIJOS:  # Identifica los simbolos fijos
             resultado.append((SIMBOLOS_FIJOS[c], c))
             i += 1
             continue
         match = REGEX_ID.match(expresion, i)
-        if match: #En caso de que no se encuentre un simbolo fijo se busca un id 
+        if match: # En caso de que no se encuentre un simbolo fijo se busca un id 
             resultado.append((TOKEN_ID, match.group()))
             i = match.end()
             continue
@@ -52,13 +52,13 @@ def lexer(expresion):
 tokens = []
 posicion = 0
 
-#Retorna el token actual
+# Retorna el token actual
 def token_actual():
     if posicion < len(tokens):
         return tokens[posicion][1]
     return None
 
-#Avanza a la siguiente posicion
+# Avanza a la siguiente posicion
 def avanzar():
     global posicion
     posicion += 1
@@ -69,9 +69,8 @@ def parsear(expresion):
     tokens = lexer(expresion)
     posicion = 0
     
-    # Conectar los 3 niveles: OR -> AND -> NOT -> (OR)
-    # NOTA: Cambiar parse_factor_mock por parse_factor cuando se integre la rama feature/not
-    _factor = lambda: parse_factor_mock(token_actual, avanzar, _exp)
+    # Conectar los 3 niveles: OR -> AND -> NOT/ID -> (recursividad al OR por los paréntesis)
+    _factor = lambda: parse_factor(token_actual, avanzar, _exp)
     _term = lambda: parse_term(token_actual, avanzar, _factor)
     _exp = lambda: parse_exp(token_actual, avanzar, _term)
 
@@ -82,9 +81,9 @@ def parsear(expresion):
 
 if __name__ == "__main__":
     while True:
-        print("\n" + "="*40)
-        print("   Parser de Expresiones Booleanas")
-        print("="*40)
+        print("\n" + "="*50)
+        print("   Parser de Expresiones Booleanas (Integrado)")
+        print("="*50)
         print("1. Analizar expresión sintácticamente (AST)")
         print("2. Ver tokens (Analizador Léxico)")
         print("3. Salir")
@@ -97,7 +96,7 @@ if __name__ == "__main__":
             try:
                 arbol = parsear(entrada)
                 import pprint
-                print("\nAST Generado:")
+                print("\nÁrbol de Derivación (AST):")
                 pprint.pprint(arbol)
             except ValueError as e:
                 print(f"\n[!] {e}")
@@ -107,15 +106,15 @@ if __name__ == "__main__":
             if not entrada.strip(): continue
             try:
                 tks = lexer(entrada)
-                print("\nTokens detectados:")
+                print("\nTokens generados:")
                 for t in tks:
                     if t[0] != TOKEN_EOF:
-                        print(f" -> Token: {t[0]:<12} | Lexema: '{t[1]}'")
+                        print(f" - Tipo: {t[0]:<12} | Lexema: '{t[1]}'")
             except ValueError as e:
                 print(f"\n[!] {e}")
                 
         elif opcion == "3":
-            print("Cerrando el parser...")
+            print("Saliendo del programa...")
             break
         else:
-            print("[!] Opción no válida. Intente de nuevo.")
+            print("[!] Opción no válida. Intente nuevamente.")
