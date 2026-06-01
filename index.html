@@ -209,8 +209,9 @@
                 <div class="examples-buttons">
                     <button class="btn-example" onclick="cargarEjemplo('id | ~ ( id & id )')">Original</button>
                     <button class="btn-example" onclick="cargarEjemplo('A | B & ~C')">Precedencia</button>
-                    <button class="btn-example" onclick="cargarEjemplo('~( id1 | id2 ) & ( id3 | id4 )')">Paréntesis múltiples</button>
+                    <button class="btn-example" onclick="cargarEjemplo('~( id1 | id2 ) & ( id3 | id4 )')">Parentesis múltiples</button>
                     <button class="btn-example" onclick="cargarEjemplo('A & ( B | ( C & ~D ) )')">Anidamiento profundo</button>
+                    <button class="btn-example" onclick="cargarEjemplo('~ ( id & id ) & (id | id)')">Ejemplo Propuesto</button>
                 </div>
             </div>
 
@@ -258,7 +259,6 @@
     <script>
         let network = null;
 
-        // Función modificada para cargar el texto y analizar automáticamente
         function cargarEjemplo(texto) {
             document.getElementById('expresion').value = texto;
             analizar(); 
